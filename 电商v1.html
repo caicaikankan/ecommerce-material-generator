@@ -1,0 +1,616 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>电商商品素材自动生成工具</title>
+    <!-- 本地打开说明：直接在浏览器中打开此HTML文件即可使用，无需本地服务器 -->
+    <!-- 引入Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- 引入Font Awesome图标 -->
+    <link href="https://cdn.jsdelivr.net/npm/font-awesome@4.7.0/css/font-awesome.min.css" rel="stylesheet">
+    <script>
+        // Tailwind配置
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        primary: '#2563EB', // 主蓝色
+                        secondary: '#6366F1', // 辅助紫色
+                        accent: '#F59E0B', // 强调橙色
+                        success: '#10B981', // 成功绿色
+                        danger: '#EF4444', // 危险红色
+                        light: '#F8FAFC', // 浅灰色背景
+                        dark: '#1E293B', // 深色文字
+                        'gray-light': '#F1F5F9',
+                        'gray-medium': '#CBD5E1',
+                        'gray-dark': '#64748B',
+                    },
+                    fontFamily: {
+                        sans: ['Inter', 'system-ui', 'sans-serif'],
+                    },
+                    boxShadow: {
+                        'soft': '0 2px 15px rgba(0, 0, 0, 0.05)',
+                        'hover': '0 8px 25px rgba(0, 0, 0, 0.1)',
+                    },
+                    animation: {
+                        'fade-in': 'fadeIn 0.3s ease-in-out',
+                        'slide-up': 'slideUp 0.4s ease-out',
+                    },
+                    keyframes: {
+                        fadeIn: {
+                            '0%': { opacity: '0' },
+                            '100%': { opacity: '1' },
+                        },
+                        slideUp: {
+                            '0%': { transform: 'translateY(20px)', opacity: '0' },
+                            '100%': { transform: 'translateY(0)', opacity: '1' },
+                        },
+                    },
+                }
+            }
+        }
+    </script>
+    <style type="text/tailwindcss">
+        @layer utilities {
+            .content-auto {
+                content-visibility: auto;
+            }
+            .text-shadow {
+                text-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            }
+            .text-shadow-lg {
+                text-shadow: 0 4px 8px rgba(0,0,0,0.2);
+            }
+            .watermark {
+                position: relative;
+            }
+            .watermark::after {
+                content: "草稿版";
+                position: absolute;
+                top: 50%;
+                left: 50%;
+                transform: translate(-50%, -50%) rotate(-30deg);
+                font-size: 3rem;
+                font-weight: 800;
+                color: rgba(0,0,0,0.08);
+                pointer-events: none;
+                letter-spacing: 2px;
+            }
+            .glass-effect {
+                background: rgba(255, 255, 255, 0.8);
+                backdrop-filter: blur(10px);
+                -webkit-backdrop-filter: blur(10px);
+            }
+            .input-focus {
+                @apply focus:ring-2 focus:ring-primary/50 focus:border-primary focus:outline-none transition-all duration-300;
+            }
+            .btn-hover {
+                @apply transition-all duration-300 hover:shadow-md transform hover:-translate-y-0.5;
+            }
+        }
+    </style>
+</head>
+<body class="bg-gradient-to-br from-light to-gray-light min-h-screen font-sans text-dark">
+    <!-- 页面容器 -->
+    <div class="container mx-auto px-4 py-8 max-w-7xl">
+        <!-- 页面标题 -->
+        <header class="mb-10 text-center animate-fade-in">
+            <div class="inline-block bg-primary/10 px-6 py-3 rounded-full mb-4">
+                <i class="fa fa-magic text-primary text-2xl"></i>
+            </div>
+            <h1 class="text-[clamp(1.8rem,4vw,3rem)] font-bold text-primary mb-3 text-shadow">电商商品素材自动生成工具</h1>
+            <p class="text-gray-dark max-w-2xl mx-auto">帮助运营人员快速生成商品主图草稿和配套文案，提升工作效率</p>
+        </header>
+
+        <!-- 主要内容区 -->
+        <main class="flex flex-col lg:flex-row gap-6 lg:gap-8">
+            <!-- 左侧：商品信息录入区 -->
+            <section class="w-full lg:w-2/5 bg-white rounded-2xl shadow-soft p-6 lg:p-8 transition-all duration-300 hover:shadow-hover animate-slide-up">
+                <div class="flex items-center gap-3 mb-6 pb-4 border-b border-gray-100">
+                    <div class="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center">
+                        <i class="fa fa-pencil text-primary"></i>
+                    </div>
+                    <h2 class="text-xl font-semibold">商品信息录入</h2>
+                </div>
+                
+                <form id="productForm" class="space-y-6">
+                    <!-- 商品名称 -->
+                    <div>
+                        <label for="productName" class="block text-sm font-medium text-gray-700 mb-2">商品名称 <span class="text-danger font-medium">*</span></label>
+                        <input 
+                            type="text" 
+                            id="productName" 
+                            class="w-full px-4 py-3 border border-gray-200 rounded-xl input-focus bg-gray-50"
+                            placeholder="请输入商品全称，如XX品牌无线蓝牙耳机"
+                            required
+                        >
+                    </div>
+
+                    <!-- 商品卖点 -->
+                    <div>
+                        <label for="productSellingPoints" class="block text-sm font-medium text-gray-700 mb-2">商品卖点 <span class="text-danger font-medium">*</span></label>
+                        <textarea 
+                            id="productSellingPoints" 
+                            rows="4" 
+                            class="w-full px-4 py-3 border border-gray-200 rounded-xl input-focus bg-gray-50"
+                            placeholder="请输入商品核心卖点，多个卖点用逗号分隔"
+                            required
+                        ></textarea>
+                    </div>
+
+                    <!-- 价格信息 -->
+                    <div class="grid grid-cols-2 gap-4">
+                        <div>
+                            <label for="originalPrice" class="block text-sm font-medium text-gray-700 mb-2">原价</label>
+                            <div class="relative">
+                                <span class="absolute left-4 top-1/2 transform -translate-y-1/2 text-gray-500 font-medium">¥</span>
+                                <input 
+                                    type="number" 
+                                    id="originalPrice" 
+                                    min="0" 
+                                    step="0.01" 
+                                    class="w-full px-10 py-3 border border-gray-200 rounded-xl input-focus bg-gray-50"
+                                    placeholder="0.00"
+                                >
+                            </div>
+                        </div>
+                        <div>
+                            <label for="discountPrice" class="block text-sm font-medium text-gray-700 mb-2">优惠价</label>
+                            <div class="relative">
+                                <span class="absolute left-4 top-1/2 transform -translate-y-1/2 text-gray-500 font-medium">¥</span>
+                                <input 
+                                    type="number" 
+                                    id="discountPrice" 
+                                    min="0" 
+                                    step="0.01" 
+                                    class="w-full px-10 py-3 border border-gray-200 rounded-xl input-focus bg-gray-50"
+                                    placeholder="0.00"
+                                >
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- 图片上传 -->
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-2">图片上传 <span class="text-danger font-medium">*</span></label>
+                        <div class="flex flex-wrap gap-4 mb-3">
+                            <div id="imagePreviews" class="flex flex-wrap gap-4"></div>
+                            <div 
+                                id="uploadArea" 
+                                class="w-28 h-28 border-2 border-dashed border-gray-300 rounded-xl flex flex-col items-center justify-center cursor-pointer hover:bg-gray-50 transition-all duration-300 hover:border-primary"
+                            >
+                                <input 
+                                    type="file" 
+                                    id="imageUpload" 
+                                    accept="image/jpeg,image/png" 
+                                    multiple 
+                                    class="hidden"
+                                    onchange="handleImageUpload(event)"
+                                >
+                                <i class="fa fa-cloud-upload text-gray-400 text-2xl mb-2"></i>
+                                <span class="text-xs text-gray-500">点击上传</span>
+                                <span class="text-xs text-gray-400 mt-1">1-3张</span>
+                            </div>
+                        </div>
+                        <p class="text-xs text-gray-500">支持JPG/PNG格式，建议尺寸800*800px</p>
+                    </div>
+
+                    <!-- 风格选择 -->
+                    <div>
+                        <label for="styleSelect" class="block text-sm font-medium text-gray-700 mb-2">风格选择</label>
+                        <select 
+                            id="styleSelect" 
+                            class="w-full px-4 py-3 border border-gray-200 rounded-xl input-focus bg-gray-50 appearance-none"
+                        >
+                            <option value="simple">简约风</option>
+                            <option value="promotion">促销风</option>
+                            <option value="artistic">文艺风</option>
+                            <option value="tech">科技风</option>
+                        </select>
+                        <div class="pointer-events-none absolute inset-y-0 right-0 flex items-center px-4 text-gray-500">
+                            <i class="fa fa-chevron-down"></i>
+                        </div>
+                    </div>
+
+                    <!-- 操作按钮 -->
+                    <div class="flex gap-4 pt-6">
+                        <button 
+                            type="button" 
+                            id="generateBtn" 
+                            class="flex-1 bg-primary hover:bg-primary/90 text-white font-medium py-3 px-6 rounded-xl btn-hover flex items-center justify-center"
+                        >
+                            <span id="generateBtnText">一键生成素材</span>
+                            <span id="loadingSpinner" class="ml-3 hidden">
+                                <i class="fa fa-spinner fa-spin"></i>
+                            </span>
+                        </button>
+                        <button 
+                            type="button" 
+                            id="clearBtn" 
+                            class="flex-1 bg-gray-200 hover:bg-gray-300 text-gray-700 font-medium py-3 px-6 rounded-xl btn-hover"
+                        >
+                            清空输入
+                        </button>
+                    </div>
+                </form>
+            </section>
+
+            <!-- 右侧：素材预览区 -->
+            <section class="w-full lg:w-3/5 bg-white rounded-2xl shadow-soft p-6 lg:p-8 transition-all duration-300 hover:shadow-hover animate-slide-up" style="animation-delay: 0.1s;">
+                <div class="flex items-center gap-3 mb-6 pb-4 border-b border-gray-100">
+                    <div class="w-10 h-10 rounded-full bg-secondary/10 flex items-center justify-center">
+                        <i class="fa fa-eye text-secondary"></i>
+                    </div>
+                    <h2 class="text-xl font-semibold">素材预览</h2>
+                </div>
+                
+                <!-- 主图预览 -->
+                <div class="mb-10">
+                    <h3 class="text-lg font-medium mb-5 flex items-center gap-2">
+                        <i class="fa fa-picture-o text-secondary"></i>
+                        主图预览
+                    </h3>
+                    <div id="imagePreviewContainer" class="overflow-x-auto pb-6">
+                        <div class="flex gap-6 min-w-max">
+                            <!-- 主图预览将通过JavaScript动态生成 -->
+                            <div class="text-center text-gray-500 py-16 bg-gray-50 rounded-xl px-8">
+                                <i class="fa fa-image text-5xl mb-4 text-gray-300"></i>
+                                <p class="text-gray-400">点击"一键生成素材"查看预览</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 文案预览 -->
+                <div>
+                    <h3 class="text-lg font-medium mb-5 flex items-center gap-2">
+                        <i class="fa fa-file-text-o text-secondary"></i>
+                        文案预览
+                    </h3>
+                    <div id="copySuccessAlert" class="bg-success/10 border border-success/20 text-success px-4 py-3 rounded-lg mb-4 hidden flex items-center gap-2 animate-fade-in">
+                        <i class="fa fa-check-circle"></i>
+                        <span>文案已成功复制到剪贴板</span>
+                    </div>
+                    <div id="copywritingPreview" class="space-y-6">
+                        <!-- 文案预览将通过JavaScript动态生成 -->
+                        <div class="text-center text-gray-500 py-16 bg-gray-50 rounded-xl px-8">
+                            <i class="fa fa-file-text text-5xl mb-4 text-gray-300"></i>
+                            <p class="text-gray-400">点击"一键生成素材"查看预览</p>
+                        </div>
+                    </div>
+                </div>
+            </section>
+        </main>
+    </div>
+
+    <!-- 图片放大预览模态框 -->
+    <div id="imageModal" class="fixed inset-0 bg-black/90 flex items-center justify-center z-50 hidden animate-fade-in">
+        <div class="relative max-w-5xl max-h-[90vh]">
+            <img id="modalImage" src="" alt="放大预览" class="max-w-full max-h-[90vh] rounded-xl shadow-2xl">
+            <button id="closeModal" class="absolute top-4 right-4 bg-black/40 hover:bg-black/60 text-white rounded-full w-12 h-12 flex items-center justify-center transition-all duration-300 transform hover:scale-110">
+                <i class="fa fa-times text-xl"></i>
+            </button>
+        </div>
+    </div>
+
+    <script>
+        // 全局变量
+        let uploadedImages = [];
+
+        // 页面加载完成后初始化
+        document.addEventListener('DOMContentLoaded', function() {
+            // 绑定按钮事件
+            document.getElementById('generateBtn').addEventListener('click', generateMaterials);
+            document.getElementById('clearBtn').addEventListener('click', clearForm);
+            document.getElementById('closeModal').addEventListener('click', closeModal);
+            document.getElementById('uploadArea').addEventListener('click', function() {
+                document.getElementById('imageUpload').click();
+            });
+            
+            // 点击模态框背景关闭模态框
+            document.getElementById('imageModal').addEventListener('click', function(e) {
+                if (e.target === this) {
+                    closeModal();
+                }
+            });
+        });
+
+        // 处理图片上传
+        function handleImageUpload(event) {
+            const files = event.target.files;
+            
+            // 检查文件数量
+            if (uploadedImages.length + files.length > 3) {
+                alert('最多只能上传3张图片');
+                return;
+            }
+            
+            // 处理每个文件
+            Array.from(files).forEach(file => {
+                if (file.type === 'image/jpeg' || file.type === 'image/png') {
+                    const reader = new FileReader();
+                    reader.onload = function(e) {
+                        uploadedImages.push(e.target.result);
+                        updateImagePreviews();
+                    };
+                    reader.readAsDataURL(file);
+                } else {
+                    alert('只支持JPG/PNG格式的图片');
+                }
+            });
+            
+            // 重置文件输入，以便可以重复上传相同的文件
+            event.target.value = '';
+        }
+
+        // 更新图片预览
+        function updateImagePreviews() {
+            const previewsContainer = document.getElementById('imagePreviews');
+            previewsContainer.innerHTML = '';
+            
+            uploadedImages.forEach((image, index) => {
+                const previewDiv = document.createElement('div');
+                previewDiv.className = 'relative w-24 h-24 rounded-lg overflow-hidden border border-gray-200';
+                
+                const img = document.createElement('img');
+                img.src = image;
+                img.className = 'w-full h-full object-cover';
+                
+                const deleteBtn = document.createElement('button');
+                deleteBtn.className = 'absolute top-1 right-1 bg-black/50 hover:bg-black/70 text-white rounded-full w-6 h-6 flex items-center justify-center text-xs transition duration-200';
+                deleteBtn.innerHTML = '<i class="fa fa-times"></i>';
+                deleteBtn.onclick = function() {
+                    uploadedImages.splice(index, 1);
+                    updateImagePreviews();
+                };
+                
+                previewDiv.appendChild(img);
+                previewDiv.appendChild(deleteBtn);
+                previewsContainer.appendChild(previewDiv);
+            });
+        }
+
+        // 生成素材
+        function generateMaterials() {
+            // 获取表单数据
+            const productName = document.getElementById('productName').value.trim();
+            const productSellingPoints = document.getElementById('productSellingPoints').value.trim();
+            const originalPrice = document.getElementById('originalPrice').value;
+            const discountPrice = document.getElementById('discountPrice').value;
+            const style = document.getElementById('styleSelect').value;
+            
+            // 表单校验
+            if (!productName) {
+                alert('请输入商品名称');
+                return;
+            }
+            
+            if (!productSellingPoints) {
+                alert('请输入商品卖点');
+                return;
+            }
+            
+            if (uploadedImages.length === 0) {
+                alert('请上传至少1张图片');
+                return;
+            }
+            
+            // 显示加载状态
+            const generateBtn = document.getElementById('generateBtn');
+            const generateBtnText = document.getElementById('generateBtnText');
+            const loadingSpinner = document.getElementById('loadingSpinner');
+            
+            generateBtn.disabled = true;
+            generateBtnText.textContent = '生成中...';
+            loadingSpinner.classList.remove('hidden');
+            
+            // 模拟生成过程（2秒延迟）
+            setTimeout(() => {
+                // 生成主图预览
+                generateImagePreviews(productName, productSellingPoints, originalPrice, discountPrice, style);
+                
+                // 生成文案预览
+                generateCopywritingPreviews(productName, productSellingPoints, originalPrice, discountPrice, style);
+                
+                // 恢复按钮状态
+                generateBtn.disabled = false;
+                generateBtnText.textContent = '一键生成素材';
+                loadingSpinner.classList.add('hidden');
+            }, 2000);
+        }
+
+        // 生成主图预览
+        function generateImagePreviews(productName, sellingPoints, originalPrice, discountPrice, style) {
+            const container = document.getElementById('imagePreviewContainer').querySelector('.flex');
+            container.innerHTML = '';
+            
+            // 生成3张模拟主图
+            for (let i = 0; i < 3; i++) {
+                const imgWrapper = document.createElement('div');
+                imgWrapper.className = 'relative watermark cursor-pointer transition-all duration-300 hover:scale-[1.03] hover:shadow-lg';
+                imgWrapper.onclick = function() {
+                    openModal(uploadedImages[i % uploadedImages.length]);
+                };
+                
+                const imgContainer = document.createElement('div');
+                imgContainer.className = 'w-[320px] h-[320px] bg-white rounded-xl overflow-hidden shadow-soft flex flex-col border border-gray-100';
+                
+                // 图片部分
+                const imgDiv = document.createElement('div');
+                imgDiv.className = 'h-[70%] bg-gray-50 relative';
+                
+                const img = document.createElement('img');
+                img.src = uploadedImages[i % uploadedImages.length];
+                img.className = 'w-full h-full object-cover';
+                
+                imgDiv.appendChild(img);
+                
+                // 文字部分
+                const textDiv = document.createElement('div');
+                textDiv.className = 'h-[30%] p-4 flex flex-col justify-between';
+                
+                const nameDiv = document.createElement('div');
+                nameDiv.className = 'text-sm font-medium line-clamp-2 text-gray-800';
+                nameDiv.textContent = productName;
+                
+                const priceDiv = document.createElement('div');
+                priceDiv.className = 'flex items-center gap-2';
+                
+                if (discountPrice) {
+                    const discountSpan = document.createElement('span');
+                    discountSpan.className = 'text-danger font-bold text-lg';
+                    discountSpan.textContent = `¥${discountPrice}`;
+                    priceDiv.appendChild(discountSpan);
+                }
+                
+                if (originalPrice) {
+                    const originalSpan = document.createElement('span');
+                    originalSpan.className = 'text-gray-400 text-sm line-through';
+                    originalSpan.textContent = `¥${originalPrice}`;
+                    priceDiv.appendChild(originalSpan);
+                }
+                
+                textDiv.appendChild(nameDiv);
+                textDiv.appendChild(priceDiv);
+                
+                imgContainer.appendChild(imgDiv);
+                imgContainer.appendChild(textDiv);
+                imgWrapper.appendChild(imgContainer);
+                container.appendChild(imgWrapper);
+            }
+        }
+
+        // 生成文案预览
+        function generateCopywritingPreviews(productName, sellingPoints, originalPrice, discountPrice, style) {
+            const container = document.getElementById('copywritingPreview');
+            container.innerHTML = '';
+            
+            // 根据选择的风格生成不同的文案模板
+            const styleTemplates = {
+                simple: {
+                    title: `${productName} - 品质之选`,
+                    content: `精选优质材料，匠心打造${productName}。\n\n${sellingPoints.split(',').map(point => `- ${point.trim()}`).join('\n')}\n\n${discountPrice ? `限时优惠：¥${discountPrice}` : ''}${originalPrice && discountPrice ? `（原价：¥${originalPrice}）` : ''}`
+                },
+                promotion: {
+                    title: `【限时特惠】${productName}`,
+                    content: `🔥 限时大促 🔥\n${productName}震撼来袭！\n\n${sellingPoints.split(',').map(point => `✅ ${point.trim()}`).join('\n')}\n\n${discountPrice ? `💥 限时价：¥${discountPrice}` : ''}${originalPrice && discountPrice ? `（原价：¥${originalPrice}，立省¥${(originalPrice - discountPrice).toFixed(2)}）` : ''}\n\n⏰ 数量有限，先到先得！`
+                },
+                artistic: {
+                    title: `${productName} - 生活美学`,
+                    content: `发现生活中的小确幸，从${productName}开始。\n\n${sellingPoints.split(',').map(point => `• ${point.trim()}`).join('\n')}\n\n${discountPrice ? `优惠价：¥${discountPrice}` : ''}${originalPrice && discountPrice ? `（原价：¥${originalPrice}）` : ''}\n\n让美好触手可及。`
+                },
+                tech: {
+                    title: `${productName} - 科技新体验`,
+                    content: `前沿科技，全新体验\n${productName}为您带来不一样的使用感受。\n\n${sellingPoints.split(',').map(point => `⚡ ${point.trim()}`).join('\n')}\n\n${discountPrice ? `科技价：¥${discountPrice}` : ''}${originalPrice && discountPrice ? `（原价：¥${originalPrice}）` : ''}\n\n引领科技潮流，从这里开始。`
+                }
+            };
+            
+            // 生成3版不同风格的文案
+            const styles = ['simple', 'promotion', 'artistic'];
+            styles.forEach((templateStyle, index) => {
+                const template = styleTemplates[templateStyle];
+                
+                const copywritingDiv = document.createElement('div');
+                copywritingDiv.className = 'bg-gray-50 rounded-xl p-5 shadow-soft border border-gray-100 transition-all duration-300 hover:shadow-md animate-fade-in';
+                copywritingDiv.style.animationDelay = `${index * 0.1}s`;
+                
+                const styleLabel = document.createElement('div');
+                styleLabel.className = 'text-xs font-semibold text-gray-500 mb-3 uppercase tracking-wider';
+                styleLabel.textContent = getStyleName(templateStyle);
+                
+                const titleInput = document.createElement('input');
+                titleInput.type = 'text';
+                titleInput.className = 'w-full text-xl font-semibold mb-4 p-3 border border-gray-200 rounded-lg input-focus bg-white';
+                titleInput.value = template.title;
+                
+                const contentTextarea = document.createElement('textarea');
+                contentTextarea.rows = 7;
+                contentTextarea.className = 'w-full p-3 border border-gray-200 rounded-lg input-focus bg-white mb-4';
+                contentTextarea.value = template.content;
+                
+                const copyBtn = document.createElement('button');
+                copyBtn.type = 'button';
+                copyBtn.className = 'bg-primary/10 hover:bg-primary/20 text-primary text-sm font-medium py-2 px-5 rounded-lg transition-all duration-300 btn-hover flex items-center gap-2';
+                copyBtn.innerHTML = '<i class="fa fa-copy"></i> 复制文案';
+                copyBtn.onclick = function() {
+                    const fullCopywriting = `${titleInput.value}\n\n${contentTextarea.value}`;
+                    copyToClipboard(fullCopywriting);
+                };
+                
+                copywritingDiv.appendChild(styleLabel);
+                copywritingDiv.appendChild(titleInput);
+                copywritingDiv.appendChild(contentTextarea);
+                copywritingDiv.appendChild(copyBtn);
+                container.appendChild(copywritingDiv);
+            });
+        }
+
+        // 获取风格名称
+        function getStyleName(style) {
+            const styleNames = {
+                simple: '简约风',
+                promotion: '促销风',
+                artistic: '文艺风',
+                tech: '科技风'
+            };
+            return styleNames[style] || style;
+        }
+
+        // 复制到剪贴板
+        function copyToClipboard(text) {
+            navigator.clipboard.writeText(text).then(function() {
+                // 显示复制成功提示
+                const alert = document.getElementById('copySuccessAlert');
+                alert.classList.remove('hidden');
+                setTimeout(() => {
+                    alert.classList.add('hidden');
+                }, 2000);
+            }).catch(function(err) {
+                console.error('复制失败:', err);
+                alert('复制失败，请手动复制');
+            });
+        }
+
+        // 清空表单
+        function clearForm() {
+            document.getElementById('productForm').reset();
+            uploadedImages = [];
+            updateImagePreviews();
+            
+            // 重置预览区
+            const imagePreviewContainer = document.getElementById('imagePreviewContainer').querySelector('.flex');
+            imagePreviewContainer.innerHTML = `
+                <div class="text-center text-gray-500 py-12">
+                    <i class="fa fa-picture-o text-4xl mb-2"></i>
+                    <p>点击"一键生成素材"查看预览</p>
+                </div>
+            `;
+            
+            const copywritingPreview = document.getElementById('copywritingPreview');
+            copywritingPreview.innerHTML = `
+                <div class="text-center text-gray-500 py-12">
+                    <i class="fa fa-file-text-o text-4xl mb-2"></i>
+                    <p>点击"一键生成素材"查看预览</p>
+                </div>
+            `;
+        }
+
+        // 打开图片预览模态框
+        function openModal(imageSrc) {
+            const modal = document.getElementById('imageModal');
+            const modalImage = document.getElementById('modalImage');
+            modalImage.src = imageSrc;
+            modal.classList.remove('hidden');
+            document.body.style.overflow = 'hidden';
+        }
+
+        // 关闭图片预览模态框
+        function closeModal() {
+            const modal = document.getElementById('imageModal');
+            modal.classList.add('hidden');
+            document.body.style.overflow = '';
+        }
+    </script>
+</body>
+</html>
